@@ -38,6 +38,7 @@ jobs:
       - run: uv run crawl_html.py
       - run: uv run html_table.py
       - run: uv run json_table.py
+      - run: uv run cdp_trap.py
 
       # Upload a specific page to GitHub Pages. Defaults to _site
       - uses: actions/upload-pages-artifact@v3
