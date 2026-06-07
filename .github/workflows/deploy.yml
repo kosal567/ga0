@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      TDS_RANDOM_SEED: ${{ secrets.TDS_RANDOM_SEED }}
+      TDS_RANDOM_SEED: ${{ secrets.TDS_RANDOM_SEED || '42' }}
 
     steps:
       # Checkout the repository
