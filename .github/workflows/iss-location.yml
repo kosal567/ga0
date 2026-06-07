@@ -1,0 +1,59 @@
+name: Log ISS Location Data Daily
+
+on:
+  schedule:
+    # Runs at 12:00 UTC every day
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  collect-iss-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 24f1002482@ds.study.iitm.ac.in
+        run: echo "Preparing ISS location update"
+
+      - name: Fetch ISS location data
+        run: |
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from urllib.request import urlopen
+
+          url = "https://api.wheretheiss.at/v1/satellites/25544"
+          with urlopen(url, timeout=30) as response:
+              payload = json.load(response)
+
+          record = {
+              "timestamp": datetime.now(timezone.utc).isoformat(),
+              "latitude": payload.get("latitude"),
+              "longitude": payload.get("longitude"),
+              "altitude": payload.get("altitude"),
+              "velocity": payload.get("velocity"),
+          }
+
+          output_file = Path("iss-location.jsonl")
+          with output_file.open("a", encoding="utf-8") as file_handle:
+              file_handle.write(json.dumps(record, separators=(",", ":")) + "\n")
+          PY
+
+      - name: Commit updated ISS log
+        run: |
+          if git diff --quiet -- iss-location.jsonl; then
+            echo "No ISS location changes to commit"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add iss-location.jsonl
+          git commit -m "Update ISS location log"
+          git push
